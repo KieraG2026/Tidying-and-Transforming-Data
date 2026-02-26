@@ -1,0 +1,9 @@
+---
+title: "Tidying and Transforming Data- Assignment 5A"
+author: "Kiera Griffiths, Desiree Thomas"
+format: html
+editor: source
+---
+
+## Approach
+For this assignment, we are asked to reconstruct a dataset from a summarized chart, store it in CSV format (CSV or database), then use tidyr and dplyr packages in R to clean and analyze it. We will convert the dataset from wide format to tidy, then perform percentage-based comparisons between two airlines, both overall and by city. We will explain differences between comparisons and create visualizations to support our conclusions. It will be imperative that we ensure values are documented when we convert dataset to different formats.  
