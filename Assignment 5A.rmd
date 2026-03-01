@@ -1,0 +1,124 @@
+---
+title: "Tidying and Transforming Data- Assignment 5A"
+author: "Kiera Griffiths, Desiree Thomas"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+## Approach
+For this assignment, we are asked to reconstruct a dataset from a summarized chart, store it in CSV format (CSV or database), then use tidyr and dplyr packages in R to clean and analyze it. We will convert the dataset from wide format to tidy, then perform percentage-based comparisons between two airlines, both overall and by city. We will explain differences between comparisons and create visualizations to support our conclusions. It will be imperative that we ensure values are documented when we convert dataset to different formats.  
+
+# Loads tidyverse library which includes: dplyr, tidyr, ggplot2.
+```{r}
+library(tidyverse)
+```
+
+# Reads CSV into a dataframe called airline. Convert raw data into structured, analyzable format and also identify columns missing headers and white space.
+```{r}
+airline <- read.csv("https://raw.githubusercontent.com/KieraG2026/Tidying-and-Transforming-Data/refs/heads/main/airline_delays.csv", header = FALSE, strip.white = TRUE)
+```
+
+# Add in column headers Airline and Status.
+```{r}
+colnames(airline) <- c(
+  "Airline",
+  "Status",
+  "Los Angeles",
+  "Phoenix",
+  "San Diego",
+  "San Francisco",
+  "Seattle"
+)
+
+airline
+```
+
+# Convert blank spaces to NA. 
+```{r}
+airline$Airline[airline$Airline == ""] <- NA
+airline$Status[airline$Status == ""] <- NA
+
+airline
+```
+
+# Removes NA rows starting with NA cells under Status column.
+```{r}
+airline <- airline %>% drop_na(Status)
+
+airline
+```
+
+
+# Fills in remaining missing cells under Airline column with airline name.
+```{r}
+airline <- airline %>% fill(Airline)
+
+airline
+```
+
+
+# Removes commas and extra spaces from numbers.
+```{r}
+airline[ , 3:7] <- lapply(airline[ , 3:7], function(x) as.numeric(gsub(",", "", x)))
+
+airline
+```
+
+# Tidy data from wide to long format.
+```{r}
+library(tidyverse)
+
+airline_long <- airline %>%
+  pivot_longer(
+    cols = 3:7,
+    names_to = "City",
+    values_to = "Flights"
+  )
+
+head(airline_long)
+```
+
+# Compare percentage of delays or arrival rates for each airline.
+```{r}
+airline_summary <- airline_long %>%
+  group_by(Airline, Status) %>%
+  summarise(Total = sum(Flights)) %>%
+  mutate(Percentage = round(Total / sum(Total) * 100, 0))  
+         
+airline_summary
+```
+
+# Compare percentage of delays or arrival rates for each airline, by city.
+```{r}
+airline_city_summary <- airline_long %>%
+  group_by(Airline, Status, City) %>%
+  summarise(Total = sum(Flights)) %>%
+  mutate(Percentage = round(Total / sum(Total) * 100, 0))  
+
+airline_city_summary
+```
+
+# Plot flight status rates by airlines bar graph.
+```{r}
+ggplot(airline_summary, aes(x = Airline, y = Percentage, fill = Status)) +
+  geom_bar(stat = "identity", position = "stack") +
+  geom_text(aes(label = paste0(Percentage, "%")),
+            position = position_stack(vjust = 0.5), color = "black", size = 5) +
+  labs(title = "Flight Status Percentage by Airline", y = "Percentage (%)")
+
+```
+
+# Plot flight status rates per airlines, by city bar graph.
+```{r}
+ggplot(airline_city_summary, aes(x = City, y = Percentage, fill = Status)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8)) +
+  geom_text(aes(label = paste0(Percentage, "%")),
+            position = position_dodge(width = 0.9), 
+            vjust = -.5, size = 3.5) +
+  facet_wrap(~Airline) +
+  labs(title = "Flight Status Percentage per Airline by City",
+       y = "Percentage (%)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
